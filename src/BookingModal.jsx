@@ -48,19 +48,20 @@ function BookingModal({ isOpen, onClose, userId, onBookingSuccess }) {
 
     try {
       // 2. Availability Check: Siguraduhin na walang Approved booking sa piniling dates
-      const { data: conflicts, error: checkError } = await supabase
-        .from('reservations')
-        .select('*')
-        .eq('status', 'Approved')
-        .or(`check_in.lte.${checkOut},check_out.gte.${checkIn}`);
+      // 2. Availability Check: Lahat ng hindi Rejected, bawal sapawan
+const { data: conflicts, error: checkError } = await supabase
+  .from('reservations')
+  .select('*')
+  .neq('status', 'Rejected') // Lahat ng status (Approved, Pending) wag isama ang Rejected
+  .or(`and(check_in.lte.${checkOut},check_out.gte.${checkIn})`); // Mas strict na overlap logic
 
-      if (checkError) throw checkError;
+if (checkError) throw checkError;
 
-      if (conflicts && conflicts.length > 0) {
-        alert("Sorry, those dates are already booked. Please try choosing another date.");
-        setLoading(false);
-        return;
-      }
+if (conflicts && conflicts.length > 0) {
+  alert("Sorry, those dates are already booked or have a pending reservation. Please try choosing another date.");
+  setLoading(false);
+  return;
+}
 
       const refNo = generateRefNo();
       
